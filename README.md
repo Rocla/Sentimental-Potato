@@ -21,7 +21,7 @@ Python 3.5 classification of movie reviews (positive or negative)
 4. Evaluation (based on scikit-learn tutorial)
 
 ## Requirements
-- Load the training **corups with sklearn.datasets.load_files**
+- Load the training corups with **sklearn.datasets.load_files**
 - Vectorization with **sklearn.feature_extraction.text.CountVectorizer**
 - Indexing with **sklearn.feature_extraction.text.TfidfTransforme**
 - Creating training models **(naive Bayes, SVM, …)**
