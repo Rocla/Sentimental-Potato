@@ -1,5 +1,5 @@
 # Sentimental Potato
-Python classification of movie reviews (positive or negative)
+Python 3.5 classification of movie reviews (positive or negative)
 
 # School project
 - Data and analysis are in french
@@ -7,6 +7,8 @@ Python classification of movie reviews (positive or negative)
 - Train on 80% of the corpus
 - Test on the 20% left
 - Use of **data/movies_tagged**
+- Use Python
+- Use of scikit-learn
 
 ## Steps
 1. Pre-Treatment (custom to the corpus given)
