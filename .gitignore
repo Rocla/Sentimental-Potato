@@ -66,3 +66,4 @@ target/
 .idea/Sentimental-Potato.iml
 .idea/vcs.xml
 .idea/workspace.xml
+data/movies_processed
