@@ -66,7 +66,8 @@ def process_raw_data(raw_path, process_path, data_categories, filter_list):
     for directory in data_categories:
         mkdir(process_path + "/" + directory)
 
-        for file in [files for files in listdir(raw_path + "/" + directory) if isfile(join(raw_path + "/" + directory, files))]:
+        for file in [files for files in listdir(raw_path + "/" + directory) if
+                     isfile(join(raw_path + "/" + directory, files))]:
             if file != ".DS_Store":
                 copy(raw_path + "/" + directory + "/" + file, process_path + "/" + directory + "/" + file)
                 filter_data(process_path + "/" + directory + "/" + file, filter_list)
@@ -90,7 +91,7 @@ def load_data(data_path, data_categories):
 def filter_data(file_path, filter_list):
     regex = ".*"
     for type in filter_list:
-        regex += type+"|"
+        regex += type + "|"
     regex = regex[:-1]
     regex += ".*"
     regex = re.compile(regex).search
@@ -135,37 +136,12 @@ def split_data(data, percent):
     return first_part_data, second_part_data
 
 
-def base_naive_bayes():
-    return Pipeline([
-        ('vect', CountVectorizer(ngram_range=(1, 1))),
-        ('tfidf', TfidfTransformer()),
-        ('clf', MultinomialNB())])
-
-
-def base_linear_model():
-    return Pipeline([
-        ('vect', CountVectorizer(ngram_range=(1, 1))),
-        ('tfidf', TfidfTransformer(use_idf=True)),
-        ('clf', SGDClassifier(
-            loss='hinge',
-            penalty='l2',
-            alpha=1e-3,
-            n_iter=5,
-            random_state=199)
-         )])
-
-
-def base_svc():
-    return Pipeline([
-        ('vect', CountVectorizer()),
-        ('tfidf', TfidfTransformer()),
-        ('clf', SVC(C=9, kernel='linear'))])
-
-
 def test_multinomialnb(data_training, data_testing, verbose=False):
     print_header("testing: naive_bayes -> MultinomialNB")
 
-    text_clf = base_naive_bayes()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 20))),
+                         ('tfidf', TfidfTransformer(use_idf=True)),
+                         ('clf', MultinomialNB())])
 
     text_clf = text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -182,7 +158,9 @@ def test_multinomialnb(data_training, data_testing, verbose=False):
 def test_bernoullinb(data_training, data_testing, verbose=False):
     print_header("testing: naive_bayes -> BernoulliNB")
 
-    text_clf = base_naive_bayes()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 1))),
+                         ('tfidf', TfidfTransformer(use_idf=True)),
+                         ('clf', BernoulliNB())])
 
     text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -199,7 +177,15 @@ def test_bernoullinb(data_training, data_testing, verbose=False):
 def test_sgdclassifier(data_training, data_testing, verbose=False):
     print_header("testing: linear_model -> SGDClassifier")
 
-    text_clf = base_linear_model()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 20))),
+                         ('tfidf', TfidfTransformer(use_idf=False)),
+                         ('clf', SGDClassifier(
+                             loss='hinge',
+                             penalty='l2',
+                             alpha=1e-3,
+                             n_iter=5,
+                             random_state=99)
+                          )])
 
     text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -216,7 +202,12 @@ def test_sgdclassifier(data_training, data_testing, verbose=False):
 def test_logisticregression(data_training, data_testing, verbose=False):
     print_header("testing: linear_model -> LogisticRegression")
 
-    text_clf = base_linear_model()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 1))),
+                         ('tfidf', TfidfTransformer(use_idf=True)),
+                         ('clf', LogisticRegression(
+                             penalty='l2',
+                             random_state=0)
+                          )])
 
     text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -233,7 +224,9 @@ def test_logisticregression(data_training, data_testing, verbose=False):
 def test_svc(data_training, data_testing, verbose=False):
     print_header("testing: svm -> SVC")
 
-    text_clf = base_svc()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 3))),
+                         ('tfidf', TfidfTransformer(use_idf=True)),
+                         ('clf', SVC(C=15, kernel='linear', random_state=0))])
 
     text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -250,7 +243,9 @@ def test_svc(data_training, data_testing, verbose=False):
 def test_linearsvc(data_training, data_testing, verbose=False):
     print_header("testing: svm -> LinearSVC")
 
-    text_clf = base_svc()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 3))),
+                         ('tfidf', TfidfTransformer(use_idf=True)),
+                         ('clf', LinearSVC(C=15, random_state=0))])
 
     text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -267,7 +262,9 @@ def test_linearsvc(data_training, data_testing, verbose=False):
 def test_nusvc(data_training, data_testing, verbose=False):
     print_header("testing: svm -> NuSVC")
 
-    text_clf = base_svc()
+    text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1, 1))),
+                         ('tfidf', TfidfTransformer(use_idf=True)),
+                         ('clf', NuSVC(kernel='linear', random_state=0))])
 
     text_clf.fit(data_training.data, data_training.target)
     docs_test = data_testing.data
@@ -295,45 +292,86 @@ def print_bruteforce_results(gs_clf, parameters, name):
     print_footer("done Bruteforce: " + str(name))
 
 
-def bruteforce_svc_random_state(min_value, max_value, data_training, jobs=2):
-    text_clf = base_svc()
-    parameters = {'clf__random_state': (min_value, max_value)}
+def bruteforce_naive_bayes_badass_multinomialnb(ngram_min=(1, 1), ngram_max=(1, 5),
+                                                jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', MultinomialNB())])
 
-    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
-    gs_clf = gs_clf.fit(data_training.data, data_training.target)
-
-    print_bruteforce_results(gs_clf, parameters, "svc random state")
-
-
-def bruteforce_svc_kernel(data_training, jobs=2):
-    text_clf = base_svc()
-    parameters = {'clf__kernel': ('linear', 'poly', 'rbf', 'sigmoid')}
-
-    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
-    gs_clf = gs_clf.fit(data_training.data, data_training.target)
-
-    print_bruteforce_results(gs_clf, parameters, "svc kernel")
-
-
-def bruteforce_svc_recommendations(data_training, jobs=2):
-    text_clf = base_svc()
     parameters = {
-        'vect__ngram_range': [(1, 1), (1, 2)],
-        'tfidf__use_idf': (True, False),
-        'clf__C': [9, 10]
+        'vect__ngram_range': [ngram_min, ngram_max],
+        'tfidf__use_idf': (True, False)
     }
 
     gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
     gs_clf = gs_clf.fit(data_training.data, data_training.target)
 
-    print_bruteforce_results(gs_clf, parameters, "svc tutorial recommendations")
+    print_bruteforce_results(gs_clf, parameters, "Naive Bayes MultinomialNB badass bruteforce")
 
 
-def bruteforce_svc_badass(random_min=0, random_max=999,
-                          ngram_min=(1, 1), ngram_max=(1, 2),
-                          c_min=9, c_max=10,
-                          jobs=2):
-    text_clf = base_svc()
+def bruteforce_naive_bayes_badass_bernoullinb(ngram_min=(1, 1), ngram_max=(1, 5),
+                                              jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', BernoulliNB())])
+
+    parameters = {
+        'vect__ngram_range': [ngram_min, ngram_max],
+        'tfidf__use_idf': (True, False)
+    }
+
+    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
+    gs_clf = gs_clf.fit(data_training.data, data_training.target)
+
+    print_bruteforce_results(gs_clf, parameters, "Naive Bayes BernoulliNB badass bruteforce")
+
+
+def bruteforce_linear_model_badass_sgdclassifier(random_min=0, random_max=999,
+                                                 ngram_min=(1, 1), ngram_max=(1, 5),
+                                                 jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', SGDClassifier())])
+
+    parameters = {
+        'clf__random_state': (random_min, random_max),
+        'vect__ngram_range': [ngram_min, ngram_max],
+        'tfidf__use_idf': (True, False)
+    }
+
+    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
+    gs_clf = gs_clf.fit(data_training.data, data_training.target)
+
+    print_bruteforce_results(gs_clf, parameters, "linear model SGDClassifier badass bruteforce")
+
+
+def bruteforce_linear_model_badass_logisticregression(random_min=0, random_max=999,
+                                                      ngram_min=(1, 1), ngram_max=(1, 5),
+                                                      jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', LogisticRegression())])
+
+    parameters = {
+        'clf__random_state': (random_min, random_max),
+        'vect__ngram_range': [ngram_min, ngram_max],
+        'tfidf__use_idf': (True, False)
+    }
+
+    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
+    gs_clf = gs_clf.fit(data_training.data, data_training.target)
+
+    print_bruteforce_results(gs_clf, parameters, "linear model LogisticRegression badass bruteforce")
+
+
+def bruteforce_svm_svc_badass(random_min=0, random_max=999,
+                              ngram_min=(1, 1), ngram_max=(1, 5),
+                              c_min=9, c_max=10,
+                              jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', SVC())])
+
     parameters = {
         'clf__random_state': (random_min, random_max),
         'clf__kernel': ('linear', 'poly', 'rbf', 'sigmoid'),
@@ -345,7 +383,48 @@ def bruteforce_svc_badass(random_min=0, random_max=999,
     gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
     gs_clf = gs_clf.fit(data_training.data, data_training.target)
 
-    print_bruteforce_results(gs_clf, parameters, "svc badass bruteforce")
+    print_bruteforce_results(gs_clf, parameters, "svm SVC badass bruteforce")
+
+
+def bruteforce_svm_linearsvc_badass(random_min=0, random_max=999,
+                                    ngram_min=(1, 1), ngram_max=(1, 5),
+                                    c_min=9, c_max=10,
+                                    jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', LinearSVC())])
+
+    parameters = {
+        'clf__random_state': (random_min, random_max),
+        'vect__ngram_range': [ngram_min, ngram_max],
+        'tfidf__use_idf': (True, False),
+        'clf__C': [c_min, c_max]
+    }
+
+    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
+    gs_clf = gs_clf.fit(data_training.data, data_training.target)
+
+    print_bruteforce_results(gs_clf, parameters, "svm LinearSVC badass bruteforce")
+
+
+def bruteforce_svm_nusvc_badass(random_min=0, random_max=999,
+                                ngram_min=(1, 1), ngram_max=(1, 5),
+                                jobs=2):
+    text_clf = Pipeline([('vect', CountVectorizer()),
+                         ('tfidf', TfidfTransformer()),
+                         ('clf', NuSVC())])
+
+    parameters = {
+        'clf__random_state': (random_min, random_max),
+        'clf__kernel': ('linear', 'poly', 'rbf', 'sigmoid'),
+        'vect__ngram_range': [ngram_min, ngram_max],
+        'tfidf__use_idf': (True, False)
+    }
+
+    gs_clf = GridSearchCV(text_clf, parameters, n_jobs=jobs)
+    gs_clf = gs_clf.fit(data_training.data, data_training.target)
+
+    print_bruteforce_results(gs_clf, parameters, "svm NuSVC badass bruteforce")
 
 
 def print_result(predicted_target, data_testing_set, mean_value, verbose=False):
@@ -371,6 +450,7 @@ def print_header(header_name):
     print(">>>>>>>>>>>")
     print("")
 
+
 def print_footer(footer_name):
     print("")
     print("<<<<<<<<<<<<")
@@ -389,7 +469,7 @@ if __name__ == "__main__":
     filter_list = ["NOM", "VER", "ADV", "ADJ"]
     results_list = []
     verbose = True
-    parallel_jobs = 4
+    parallel_jobs = 6
 
     print("Bello, I am grumpy, and I hate you")
     print("I will work on the path: " + str(path))
@@ -417,16 +497,35 @@ if __name__ == "__main__":
     print("Now let's sort them...")
     print(sorted(results_list, key=lambda x: x[1], reverse=True))
 
-    print("BRUTEFORCing for the fun!!!")
-    bruteforce_svc_random_state(0, 999, data_training, jobs=parallel_jobs)
-    bruteforce_svc_kernel(data_training, jobs=parallel_jobs)
-    bruteforce_svc_recommendations(data_training, jobs=parallel_jobs)
+    print("Trying to crash your machine! Just kidding, i am bruteforcing the parameters :)")
+    # here ngram_max is important
+    bruteforce_naive_bayes_badass_multinomialnb(ngram_min=(1, 1),
+                                                ngram_max=(1, 30),
+                                                jobs=parallel_jobs)
 
-    print("Trying to crash Bilat's Cloud")
-    bruteforce_svc_badass(random_min=0, random_max=999,
-                          ngram_min=(1, 1), ngram_max=(1, 10),
-                          c_min=5, c_max=15,
-                          jobs=4)
+    bruteforce_naive_bayes_badass_bernoullinb(ngram_min=(1, 1),
+                                              ngram_max=(1, 10),
+                                              jobs=parallel_jobs)
 
+    # here random & ngram are important
+    bruteforce_linear_model_badass_sgdclassifier(random_min=0, random_max=99999,
+                                                 ngram_min=(1, 1), ngram_max=(1, 30),
+                                                 jobs=parallel_jobs)
 
+    bruteforce_linear_model_badass_logisticregression(random_min=0, random_max=1,
+                                                      ngram_min=(1, 1), ngram_max=(1, 10),
+                                                      jobs=parallel_jobs)
 
+    bruteforce_svm_svc_badass(random_min=0, random_max=1,
+                              ngram_min=(1, 1), ngram_max=(1, 10),
+                              c_min=1, c_max=50,
+                              jobs=parallel_jobs)
+
+    bruteforce_svm_linearsvc_badass(random_min=0, random_max=1,
+                                    ngram_min=(1, 1), ngram_max=(1, 30),
+                                    c_min=1, c_max=50,
+                                    jobs=parallel_jobs)
+
+    bruteforce_svm_nusvc_badass(random_min=0, random_max=1,
+                                ngram_min=(1, 1), ngram_max=(1, 10),
+                                jobs=parallel_jobs)
